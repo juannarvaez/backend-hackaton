@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name     String
+  role     Role     @default(USER)
+  phone    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles      Vehicle[]
+  dealsAsBuyer  Deal[]    @relation("BuyerDeals")
+  dealsAsSeller Deal[]    @relation("SellerDeals")
+  messages     Message[]
+  roomParticipants RoomParticipant[]
+  roomMessages    RoomMessage[]
+}
+
+enum Role {
+  USER
+  DEALER
+  ADMIN
+}
+
+model Vehicle {
+  id          String   @id @default(cuid())
+  vin         String   @unique
+  make        String
+  model       String
+  year        Int
+  price       Float
+  mileage    Int
+  color      String
+  fuelType   FuelType
+  transmission Transmission
+  condition  VehicleCondition
+  description String?
+  images     String   @db.LongText
+  features   String   @db.LongText
+  status     VehicleStatus @default(AVAILABLE)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  sellerId    String
+  seller      User     @relation(fields: [sellerId], references: [id])
+  deals       Deal[]
+  aiAnalysis AIAnalysis?
+}
+
+enum FuelType {
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+}
+
+enum Transmission {
+  MANUAL
+  AUTOMATIC
+  CVT
+}
+
+enum VehicleCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  PENDING
+  SOLD
+}
+
+model Deal {
+  id           String    @id @default(cuid())
+  status       DealStatus @default(PENDING)
+  offeredPrice Float?
+  finalPrice  Float?
+  notes        String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  completedAt  DateTime?
+
+  buyerId      String
+  sellerId     String
+  vehicleId   String
+  buyer       User      @relation("BuyerDeals", fields: [buyerId], references: [id])
+  seller      User     @relation("SellerDeals", fields: [sellerId], references: [id])
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  messages    Message[]
+  room        Room?
+}
+
+enum DealStatus {
+  PENDING
+  NEGOTIATING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String
+  type     RoomType @default(DEAL)
+  status   RoomStatus @default(WAITING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dealId    String   @unique
+  deal     Deal     @relation(fields: [dealId], references: [id])
+  participants RoomParticipant[]
+  messages  RoomMessage[]
+}
+
+enum RoomType {
+  DEAL
+  GENERAL
+}
+
+enum RoomStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+
+model RoomParticipant {
+  id        String   @id @default(cuid())
+  joinedAt  DateTime @default(now())
+  isHost    Boolean  @default(false)
+
+  roomId    String
+  userId   String
+  room     Room    @relation(fields: [roomId], references: [id])
+  user     User    @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  type      MessageType @default(TEXT)
+  createdAt DateTime   @default(now())
+
+  senderId  String
+  dealId    String
+  sender    User     @relation(fields: [senderId], references: [id])
+  deal      Deal     @relation(fields: [dealId], references: [id])
+}
+
+enum MessageType {
+  TEXT
+  OFFER
+  ACCEPT
+  REJECT
+}
+
+model RoomMessage {
+  id        String   @id @default(cuid())
+  content   String
+  type      MessageType @default(TEXT)
+  createdAt DateTime    @default(now())
+
+  roomId    String
+  senderId  String
+  room      Room     @relation(fields: [roomId], references: [id])
+  sender    User     @relation(fields: [senderId], references: [id])
+}
+
+model AIAnalysis {
+  id            String   @id @default(cuid())
+  marketValue   Float
+  priceScore   Int
+  recommendations String
+  insights    String
+  createdAt    DateTime @default(now())
+
+  vehicleId    String   @unique
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+}
