@@ -23,6 +23,7 @@ model User {
   messages     Message[]
   roomParticipants RoomParticipant[]
   roomMessages    RoomMessage[]
+  voiceTranscripts VoiceTranscript[]
 }
 
 enum Role {
@@ -122,6 +123,7 @@ model Room {
   deal     Deal     @relation(fields: [dealId], references: [id])
   participants RoomParticipant[]
   messages  RoomMessage[]
+  voiceTranscripts VoiceTranscript[]
 }
 
 enum RoomType {
@@ -177,6 +179,17 @@ model RoomMessage {
   senderId  String
   room      Room     @relation(fields: [roomId], references: [id])
   sender    User     @relation(fields: [senderId], references: [id])
+}
+
+model VoiceTranscript {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  roomId    String
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  room      Room     @relation(fields: [roomId], references: [id])
 }
 
 model AIAnalysis {

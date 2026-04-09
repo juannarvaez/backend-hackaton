@@ -52,4 +52,19 @@ export class RoomsService {
   async updateStatus(roomId: string, status: string) {
     return this.prisma.room.update({ where: { id: roomId }, data: { status: status as any } });
   }
+
+  async getVoiceTranscripts(roomId: string) {
+    return this.prisma.voiceTranscript.findMany({
+      where: { roomId },
+      include: { sender: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async addVoiceTranscript(roomId: string, senderId: string, content: string) {
+    return this.prisma.voiceTranscript.create({
+      data: { roomId, senderId, content },
+      include: { sender: { select: { id: true, name: true } } },
+    });
+  }
 }

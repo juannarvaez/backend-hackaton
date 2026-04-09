@@ -31,4 +31,18 @@ export class RoomsController {
   getParticipants(@Param('id') id: string) {
     return this.roomsService.getParticipants(id);
   }
+
+  @Get(':id/transcripts')
+  getVoiceTranscripts(@Param('id') id: string) {
+    return this.roomsService.getVoiceTranscripts(id);
+  }
+
+  @Post(':id/transcripts')
+  addVoiceTranscript(
+    @Param('id') id: string,
+    @Body() body: { content: string },
+    @Request() req: any
+  ) {
+    return this.roomsService.addVoiceTranscript(id, req.user.id, body.content);
+  }
 }

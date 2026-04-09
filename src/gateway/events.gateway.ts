@@ -156,4 +156,23 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(targetSocketId).emit('call-ended');
     }
   }
+
+  @SubscribeMessage('voice-transcript')
+  async handleVoiceTranscript(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; userId: string; content: string },
+  ) {
+    const sender = await this.prisma.user.findUnique({ where: { id: data.userId } });
+    const transcript = await this.prisma.voiceTranscript.create({
+      data: {
+        roomId: data.roomId,
+        senderId: data.userId,
+        content: data.content,
+      },
+      include: { sender: { select: { id: true, name: true } } },
+    });
+
+    this.server.to(data.roomId).emit('voice-transcript', transcript);
+    return transcript;
+  }
 }
