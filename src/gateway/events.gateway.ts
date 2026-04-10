@@ -50,6 +50,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string },
   ) {
+    console.log('join-room received from', client.id, 'roomId:', data.roomId, 'userId:', data.userId)
     client.join(data.roomId);
     client.to(data.roomId).emit('user-joined', { userId: data.userId, socketId: client.id });
     return { status: 'joined' };
@@ -69,6 +70,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string; content: string },
   ) {
+    console.log('chat-message received from', client.id, 'roomId:', data.roomId)
     const sender = await this.prisma.user.findUnique({ where: { id: data.userId } });
     const message = await this.prisma.roomMessage.create({
       data: {
@@ -156,6 +158,23 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(targetSocketId).emit('call-ended');
     }
   }
+
+  @SubscribeMessage('vehicle-tab-change')
+  handleVehicleTabChange(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; tab: string },
+  ) {
+    client.to(data.roomId).emit('vehicle-tab-change', { tab: data.tab });
+  }
+
+  @SubscribeMessage('vehicle-image-selected-change')
+  handleVehicleImageSelectedChange(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; imageIndex: number },
+  ) {
+    client.to(data.roomId).emit('vehicle-image-selected-change', { imageIndex: data.imageIndex });
+  }
+
 
   @SubscribeMessage('voice-transcript')
   async handleVoiceTranscript(
